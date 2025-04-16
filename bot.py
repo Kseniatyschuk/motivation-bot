@@ -1,5 +1,5 @@
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram import Update, ReplyKeyboardMarkup
 from dotenv import load_dotenv
 import os
 import random
@@ -19,12 +19,7 @@ motivational_quotes = [
     "Навіть маленький крок — це вже рух вперед 🦶",
     "Ти не просто молодець, ти мегамолодець! 🌈",
     "Не чекай ідеального моменту ✨ Створи його 🔥",
-    "Сумніваєшся? Згадай, скільки вже пройдено 💪",
-    "Дозволь собі бути гордою за себе 💖",
-    "Ти 💎 — головна героїня своєї історії 📖",
-    "Життя не репетиція. Грай по-крупному 🎭",
-    "В тобі вже є все, що потрібно 💗",
-    "Ще одна дія 👣 — ще один крок до мрії 🌈"
+    "Сумніваєшся? Згадай, скільки вже пройдено 💪"
 ]
 
 # Список заспокійливих фраз
@@ -35,37 +30,34 @@ calming_quotes = [
     "Твої емоції — це нормально 💌",
     "Ти маєш право на відпочинок 🌙",
     "Усе минеться, ти сильна 💪",
-    "Сьогодні ти вже зробила достатньо 💞"
+    "Сьогодні ти вже зробила достатньо 💞",
+    "Світ не впаде, якщо ти відпочинеш 🫶",
+    "Піклуйся про себе так, як про найкращу подругу 💖",
+    "Тиша — теж відповідь. І вона лікує 🤍"
 ]
 
-# Команда /start з кнопками
+# Команда /start з постійною клавіатурою
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("💪 Мотивуй мене!", callback_data="motivate")],
-        [InlineKeyboardButton("🧘 Заспокой мене", callback_data="calm")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    keyboard = [['💪 Мотивуй мене!', '🧘 Заспокой мене']]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False)
     await update.message.reply_text(
-        "Привіт! Я твій Мотиваційний Бот 🤖✨\nНатисни кнопку нижче, щоб отримати заряд натхнення!",
+        "Привіт! Я твій Мотиваційний Бот 🤖✨\nНатисни кнопку нижче, щоб отримати підтримку!",
         reply_markup=reply_markup
     )
 
-# Обробка натискання кнопки
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    if query.data == "motivate":
-        quote = random.choice(motivational_quotes)
-    elif query.data == "calm":
-        quote = random.choice(calming_quotes)
+# Обробка натискань на кнопки
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if text == '💪 Мотивуй мене!':
+        await update.message.reply_text(random.choice(motivational_quotes))
+    elif text == '🧘 Заспокой мене':
+        await update.message.reply_text(random.choice(calming_quotes))
     else:
-        quote = "Я тебе підтримую ❤️"
+        await update.message.reply_text("Натисни одну з кнопок нижче 😊")
 
-    await query.edit_message_text(quote)
-
-# Запускаємо бота
-app = ApplicationBuilder().token(TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CallbackQueryHandler(button_handler))
-app.run_polling()
+# Запуск
+if __name__ == "__main__":
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.run_polling()
